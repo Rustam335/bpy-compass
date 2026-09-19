@@ -48,3 +48,10 @@ next-env.d.ts
 # local dev server log
 dev.log
 eval-run.log
+
+# AI-assistant working files (local only)
+CLAUDE.md
+AGENTS.md
+PROJECT_BRIEF.md
+.claude/
+.junie/

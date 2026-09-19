@@ -124,6 +124,8 @@ async function runInBlender(bin: string, script: string, assertScript?: string) 
   const out = spawnSync(bin, ["-b", "--factory-startup", "--python-exit-code", "1", "--python", file], {
     encoding: "utf8",
     timeout: BLENDER_TIMEOUT_MS,
+    // Test cases that write files read this path instead of inventing one.
+    env: { ...process.env, BPY_OUT_OBJ: path.join(dir, "out.obj") },
   });
   return { passed: out.status === 0, stderr: (out.stderr ?? "") + (out.error ? `\n${out.error.message}` : "") };
 }

@@ -1,0 +1,15 @@
+yarn run v1.22.22
+$ next dev
+▲ Next.js 16.3.5 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://169.254.83.107:3000
+- Environments: .env.local
+✓ Ready in 630ms
+✓ Running next.config.ts took 27ms
+
+ POST /api/chat 200 in 42s (next.js: 880ms, application-code: 41s)
+ POST /api/chat 200 in 34.7s (next.js: 23ms, application-code: 34.7s)
+ POST /api/chat 200 in 21.2s (next.js: 11ms, application-code: 21.2s)
+ POST /api/chat 200 in 39.9s (next.js: 6ms, application-code: 39.9s)
+ GET / 200 in 589ms (next.js: 107ms, application-code: 482ms)
+ POST /api/chat 200 in 17.7s (next.js: 5ms, application-code: 17.7s)

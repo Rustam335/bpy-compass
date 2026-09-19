@@ -1,5 +1,5 @@
 /**
- * Seed `blenderVersion` and `apiChange` documents from sanity/seed/*.json.
+ * Seed `blenderVersion`, `apiChange` and `testCase` documents from sanity/seed/*.json.
  * Idempotent: deterministic _ids + createOrReplace.
  *
  *   yarn seed
@@ -25,6 +25,14 @@ type ApiChangeSeed = {
   sourceUrl: string;
   area: string;
 };
+type TestCaseSeed = {
+  id: string;
+  order: number;
+  targetVersion: string;
+  question: string;
+  expectApiChanges?: string[];
+  assertScript?: string;
+};
 
 export function versionDocId(version: string): string {
   return `blenderVersion-${version.replace(/\./g, "-")}`;
@@ -39,9 +47,10 @@ function codeField(code?: string) {
 }
 
 async function main() {
-  const [versions, changes] = await Promise.all([
+  const [versions, changes, tests] = await Promise.all([
     loadJson<VersionSeed[]>("blender-versions.json"),
     loadJson<ApiChangeSeed[]>("api-changes.json"),
+    loadJson<TestCaseSeed[]>("test-cases.json"),
   ]);
 
   const knownVersions = new Set(versions.map((v) => v.version));
@@ -50,6 +59,14 @@ async function main() {
     throw new Error(
       `apiChange references unknown versions: ${orphans.map((c) => `${c.id}→${c.changedIn}`).join(", ")}`,
     );
+  }
+
+  const knownChanges = new Set(changes.map((c) => c.id));
+  const badTests = tests.filter(
+    (t) => !knownVersions.has(t.targetVersion) || (t.expectApiChanges ?? []).some((id) => !knownChanges.has(id)),
+  );
+  if (badTests.length > 0) {
+    throw new Error(`testCase references unknown version/apiChange: ${badTests.map((t) => t.id).join(", ")}`);
   }
 
   const tx = writeClient().transaction();
@@ -81,8 +98,26 @@ async function main() {
     });
   }
 
+  for (const t of tests) {
+    tx.createOrReplace({
+      _id: `testCase-${t.id}`,
+      _type: "testCase",
+      order: t.order,
+      question: t.question,
+      targetVersion: { _type: "reference", _ref: versionDocId(t.targetVersion) },
+      expectApiChanges: (t.expectApiChanges ?? []).map((id) => ({
+        _type: "reference",
+        _ref: `apiChange-${id}`,
+        _key: id,
+      })),
+      assertScript: codeField(t.assertScript),
+    });
+  }
+
   const result = await tx.commit();
-  console.log(`Seeded ${versions.length} versions and ${changes.length} api changes (tx ${result.transactionId}).`);
+  console.log(
+    `Seeded ${versions.length} versions, ${changes.length} api changes and ${tests.length} test cases (tx ${result.transactionId}).`,
+  );
 }
 
 main().catch((err) => {

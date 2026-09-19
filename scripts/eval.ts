@@ -8,8 +8,7 @@
  *
  * Runs locally only (Blender is not available on Vercel).
  */
-import { config as loadEnv } from "dotenv";
-loadEnv({ path: [".env.local", ".env"], quiet: true });
+import "./load-env";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, stepCountIs } from "ai";
 import { spawnSync } from "node:child_process";

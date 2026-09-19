@@ -47,3 +47,4 @@ next-env.d.ts
 
 # local dev server log
 dev.log
+eval-run.log

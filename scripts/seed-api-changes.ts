@@ -4,8 +4,7 @@
  *
  *   yarn seed
  */
-import { config as loadEnv } from "dotenv";
-loadEnv({ path: [".env.local", ".env"], quiet: true });
+import "./load-env";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { writeClient } from "../lib/sanity";

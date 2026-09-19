@@ -66,7 +66,7 @@ export interface EvalRunDoc {
 
 export const TEST_CASES_QUERY = /* groq */ `
 *[_type == "testCase"] | order(order asc, _createdAt asc) {
-  _id, question, assertScript,
+  _id, question, "assertScript": assertScript.code,
   "targetVersion": targetVersion->version,
   "expectApiChanges": expectApiChanges[]->{ symbol, replacement }
 }`;

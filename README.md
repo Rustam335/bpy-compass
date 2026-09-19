@@ -43,9 +43,8 @@ agent says so instead of guessing.
 Uploading old-style tutorials next to the official release notes made the build raise **6 Critical
 conflicts** (EEVEE identifier, boolean solver names, `calc_normals` removal, ...). Four of them were
 facts that are *true for different versions*, so "pick a side" was the wrong tool. They were
-resolved with version-scoped picks plus two standing Instructions. The full story, IDs, source
-list, Instruction text and before/after screenshots live in
-[`docs/CONTEXT-SETUP.md`](docs/CONTEXT-SETUP.md) and [`docs/screenshots/`](docs/screenshots/).
+resolved with version-scoped picks plus standing Instructions. The before/after screenshots and the
+full story are on the live app's [How it works](https://bpy-compass.vercel.app/about) page.
 
 One lesson worth repeating: stale tutorials that carry an "intentionally outdated" banner produce
 **zero** conflicts, because the build reads the banner and files them as history. Real stale
@@ -88,7 +87,7 @@ lib/          model.ts · prompt.ts · context-mcp.ts · sanity.ts · rate-limit
 sanity/       schemaTypes/ (apiChange, blenderVersion, testCase, evalRun) · seed/*.json
 scripts/      eval.ts · seed-api-changes.ts · load-env.ts
 kb-sources/   stale/ tutorials uploaded as KB file sources + ATTRIBUTION.md
-docs/         CONTEXT-SETUP.md (KB setup log) · screenshots/ (Issues before/after)
+public/       screenshots used on the About page
 ```
 
 ## Eval results

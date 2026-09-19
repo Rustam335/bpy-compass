@@ -62,14 +62,8 @@ export default async function EvalPage() {
           Each generated script was executed in headless Blender (4.5.14 LTS and 5.0.1) with a
           factory startup file, followed by the test case&apos;s assert script. Results are stored
           in Sanity and shown here unedited, including failures. The only difference between the two
-          contenders is that the baseline has no Knowledge Base tools and no outline.{" "}
-          <a
-            href="https://github.com/Rustam335/bpy-compass/blob/master/docs/EVAL-NOTES.md"
-            className="underline hover:text-accent"
-          >
-            Notes on every failure
-          </a>
-          .
+          contenders is that the baseline has no Knowledge Base tools and no outline. Failed rows
+          show the first error line from Blender.
         </p>
       </header>
 

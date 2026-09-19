@@ -44,3 +44,6 @@ next-env.d.ts
 # IDE
 .idea/
 *.iml
+
+# local dev server log
+dev.log

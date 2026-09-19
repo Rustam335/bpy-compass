@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
+/*
+ * Palette borrowed from the place the users live: Blender's default theme.
+ * Editor gray backgrounds, one orange accent, semantic green/red for eval results.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #1f1f1f;          /* window */
+  --panel: #2b2b2b;       /* editor region */
+  --panel-2: #353535;     /* header / hover */
+  --line: #444444;
+  --line-strong: #5a5a5a;
+  --text: #e8e8e8;
+  --text-dim: #a5a5a5;
+  --text-faint: #7a7a7a;
+  --accent: #e87d0d;      /* Blender orange */
+  --accent-ink: #1a1a1a;
+  --ok: #7fc97f;
+  --bad: #ef6f6f;
+  --warn: #f0b545;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--text);
+  --color-ink-dim: var(--text-dim);
+  --color-ink-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-ok: var(--ok);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Inline code inside prose */
+.rich code {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.05em 0.35em;
+  font-size: 0.9em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+.busy-dot {
+  animation: pulse-dot 1.2s ease-in-out infinite;
 }

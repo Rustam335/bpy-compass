@@ -51,6 +51,7 @@ export interface TestCaseDoc {
 export interface EvalRunDoc {
   _id: string;
   testCaseId: string;
+  testCaseOrder: number | null;
   question: string;
   targetVersion: string;
   contender: "baseline" | "bpy-compass";
@@ -75,6 +76,7 @@ export const LATEST_EVAL_RUNS_QUERY = /* groq */ `
 *[_type == "evalRun"] | order(ranAt desc) {
   _id, contender, passed, stderr, blenderBuild, modelId, provider, ranAt,
   "testCaseId": testCase._ref,
+  "testCaseOrder": testCase->order,
   "question": testCase->question,
   "targetVersion": testCase->targetVersion->version
 }`;

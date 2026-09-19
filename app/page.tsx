@@ -3,13 +3,14 @@ import { Chat } from "./components/chat";
 export default function HomePage() {
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Blender Python answers that match <em>your</em> version.
+      <header className="max-w-3xl space-y-3">
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+          bpy answers that run on the Blender version you actually have.
         </h1>
-        <p className="max-w-2xl text-zinc-600 dark:text-zinc-400">
-          Every answer is read from a Sanity Context Knowledge Base built from official release notes,
-          with each claim cited and stale patterns called out. Pick a version, ask a scripting question.
+        <p className="text-ink-dim">
+          The Python API changes every release and old tutorials keep ranking. bpy-compass reads a
+          Sanity Context Knowledge Base built from the official release notes, cites the entries it
+          used, and tells you which popular pattern broke, in which version, and what replaced it.
         </p>
       </header>
       <Chat />

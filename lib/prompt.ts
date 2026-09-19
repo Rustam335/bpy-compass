@@ -18,7 +18,7 @@ Respond in exactly this structure and nothing else:
 
 ANSWER — valid for Blender <version>
 
-    <python script, indented 4 spaces>
+    <python script, indented 4 spaces; sections not backed by the Knowledge Base start with the comment line '# NOT in Knowledge Base: <what>'>
 
 WATCH OUT
 - <one bullet per deprecated/removed pattern: what, removed/changed in which version, replacement>  [source: <KB entry path>]
@@ -38,6 +38,7 @@ export function buildSystemPrompt(opts: { version: string; outline?: string; kno
     "1. Answer ONLY from the Knowledge Base. Call knowledge_base_read (arguments: knowledgeBase id, paths copied verbatim from the outline, max 20) before answering.",
     "2. Cite the KB entry path for every claim in WATCH OUT and list every path you read under SOURCES.",
     "3. If the Knowledge Base does not cover the question, say so plainly. Never invent APIs.",
+    "   If it covers only part of the question, you may still write the rest from general knowledge, but every code section that is not backed by an entry you read MUST begin with its own comment line `# NOT in Knowledge Base: <what>` placed INSIDE the indented script, directly above that section (never as a block after the script), and must not be cited in WATCH OUT as if it were.",
     "4. When sources disagree, official release notes are ground truth; mention the old form and the version it stopped working in.",
     "",
     OUTPUT_FORMAT,

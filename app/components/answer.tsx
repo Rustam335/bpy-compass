@@ -95,8 +95,26 @@ export function AnswerPanels({ text, streaming }: { text: string; streaming: boo
             {a.heading && <span className="font-mono text-accent">{a.heading}</span>}
           </header>
           <pre className="overflow-x-auto px-4 py-3 text-[13px] leading-relaxed">
-            <code>{a.code}</code>
+            <code>
+              {a.code.split("\n").map((line, i) =>
+                line.includes("NOT in Knowledge Base") ? (
+                  <span key={i} className="block bg-warn/10 text-warn">
+                    {line}
+                  </span>
+                ) : (
+                  <span key={i} className="block">
+                    {line}
+                  </span>
+                ),
+              )}
+            </code>
           </pre>
+          {a.code.includes("NOT in Knowledge Base") && (
+            <p className="border-t border-line bg-warn/5 px-4 py-2 text-xs text-warn">
+              Highlighted sections are not backed by a Knowledge Base entry. They come from the model&apos;s
+              general knowledge and were not verified against release notes.
+            </p>
+          )}
         </section>
       )}
 

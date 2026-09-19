@@ -103,12 +103,12 @@ scripts/eval.ts ─► agent + baseline ─► blender -b --python ─► evalRu
         <Image
           src="/screenshots/entry-boolean-solvers-final.jpg"
           alt="Rebuilt Knowledge Base entry showing boolean solver identifiers by Blender version"
-          width={894}
-          height={874}
+          width={1092}
+          height={1114}
           className="rounded-md border border-line"
         />
         <figcaption className="mt-1.5 text-xs text-ink-faint">
-          The rebuilt entry keeps the old form, labeled with the version it stopped working in.
+          The rebuilt entry: solver values per version range, with the old form kept and labeled.
         </figcaption>
       </figure>
       <p className="mt-4 text-sm text-ink-dim">

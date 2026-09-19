@@ -184,10 +184,10 @@
     "symbol": "bpy.types.Mesh.use_auto_smooth / auto_smooth_angle",
     "kind": "removed",
     "changedIn": "4.1",
-    "replacement": "sharp_edge attribute + Smooth by Angle modifier",
-    "summary": "use_auto_smooth and auto_smooth_angle were removed in 4.1. Face-corner normals are used automatically when smooth and flat faces are mixed. Angle-based smoothing is now a modifier (geometry nodes 'Smooth by Angle') that drives the boolean 'sharp_edge' edge attribute.",
+    "replacement": "bpy.ops.object.shade_smooth_by_angle (4.2+) / sharp_edge attribute",
+    "summary": "use_auto_smooth and auto_smooth_angle were removed in 4.1. Face-corner normals are used automatically when smooth and flat faces are mixed. Angle-based smoothing is done by the operator bpy.ops.object.shade_smooth_by_angle(angle=...) (named shade_auto_smooth in 4.1, renamed in 4.2; both names work in 4.5 and 5.0), which shade-smooths the faces and marks the boolean 'sharp_edge' edge attribute. It works on the active/selected objects and adds NO modifier. There is no modifier type 'SMOOTH_BY_ANGLE': obj.modifiers.new(name, 'SMOOTH_BY_ANGLE') raises TypeError. The 'Smooth by Angle' node-group asset from the Essentials library can be added as a geometry-nodes modifier via bpy.ops.object.modifier_add_node_group, but the operator is the simple form.",
     "before": "mesh.use_auto_smooth = True\nmesh.auto_smooth_angle = math.radians(30)",
-    "after": "bpy.ops.object.shade_smooth()\nsharp = mesh.attributes.new(\"sharp_edge\", \"BOOLEAN\", \"EDGE\")\n# or add the 'Smooth by Angle' modifier from the Essentials asset library",
+    "after": "import math\nobj = bpy.data.objects['Cube']\nbpy.context.view_layer.objects.active = obj\nobj.select_set(True)\nbpy.ops.object.shade_smooth_by_angle(angle=math.radians(30))  # 4.2+; sets use_smooth + 'sharp_edge' attribute, no modifier",
     "sourceUrl": "https://developer.blender.org/docs/release_notes/4.1/python_api/",
     "area": "modeling"
   },

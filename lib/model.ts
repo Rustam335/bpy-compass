@@ -21,9 +21,9 @@ export const PROVIDER: string = process.env.OPENROUTER_PROVIDER ?? "";
 export const TEMPERATURE = 0;
 
 /** Max tool-loop steps for one answer (cost guard). */
-export const MAX_STEPS = 4;
+export const MAX_STEPS = 5;
 /** Max output tokens per answer (cost guard). */
-export const MAX_OUTPUT_TOKENS = 2048;
+export const MAX_OUTPUT_TOKENS = 4096;
 
 export type Contender = "baseline" | "bpy-compass";
 

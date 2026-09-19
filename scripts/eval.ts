@@ -163,7 +163,7 @@ async function main() {
   const { dryRun, only } = parseArgs(process.argv.slice(2));
   assertValidModelConfig();
 
-  const all = await fetchTestCases();
+  const all = await fetchTestCases({ fresh: true });
   const cases = only ? all.filter((_, i) => i + 1 === only) : all;
   if (cases.length === 0) throw new Error("No test cases found in Sanity.");
 

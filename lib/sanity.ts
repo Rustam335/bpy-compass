@@ -79,8 +79,10 @@ export const LATEST_EVAL_RUNS_QUERY = /* groq */ `
   "targetVersion": testCase->targetVersion->version
 }`;
 
-export async function fetchTestCases(): Promise<TestCaseDoc[]> {
-  return readClient().fetch<TestCaseDoc[]>(TEST_CASES_QUERY);
+/** Scripts pass `{ fresh: true }` to bypass the CDN so a just-seeded assert is used immediately. */
+export async function fetchTestCases(opts: { fresh?: boolean } = {}): Promise<TestCaseDoc[]> {
+  const client = opts.fresh ? readClient().withConfig({ useCdn: false }) : readClient();
+  return client.fetch<TestCaseDoc[]>(TEST_CASES_QUERY);
 }
 
 export async function fetchEvalRuns(): Promise<EvalRunDoc[]> {

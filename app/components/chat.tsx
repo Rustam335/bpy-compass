@@ -133,9 +133,10 @@ export function Chat() {
   }
 
   function revealStale() {
-    if (!lastUser) return;
+    if (!lastUser || staleBusy) return;
     setShowStale(true);
-    if (stale.messages.length === 0) {
+    if (!staleAnswer) {
+      stale.setMessages([]);
       stale.sendMessage({ text: textOf(lastUser) }, { body: { mode: "stale" } });
     }
   }
@@ -229,7 +230,14 @@ export function Chat() {
                     </pre>
                   ) : staleBusy ? (
                     <p className="text-xs text-ink-dim">Recalling the 2.7x-era way…</p>
-                  ) : null}
+                  ) : stale.error ? (
+                    <p className="text-xs text-bad">
+                      The comparison could not be generated ({stale.error.message.includes("429") ? "rate limit" : "model error"}).
+                      Click the button again.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-ink-dim">The model returned nothing this time. Click the button again.</p>
+                  )}
                   <p className="mt-3 text-xs text-ink-faint">
                     Generated from the model&apos;s memory on purpose, without the Knowledge Base. Compare
                     it with the Watch out list on the left.
@@ -239,7 +247,7 @@ export function Chat() {
             )}
           </div>
 
-          {!isBusy && answerText && !showStale && (
+          {!isBusy && answerText && (!showStale || (!staleBusy && !staleAnswer)) && (
             <button
               type="button"
               onClick={revealStale}

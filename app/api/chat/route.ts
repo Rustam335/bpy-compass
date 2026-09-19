@@ -3,7 +3,15 @@ import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 
 import { z } from "zod";
 import { connectContextMcp, fetchInitialContext } from "@/lib/context-mcp";
 import { env } from "@/lib/env";
-import { MAX_OUTPUT_TOKENS, MAX_STEPS, MODEL_ID, openRouterRouting, TEMPERATURE } from "@/lib/model";
+import {
+  MAX_OUTPUT_TOKENS,
+  MAX_STEPS,
+  MODEL_ID,
+  openRouterRouting,
+  REASONING_MAX_TOKENS,
+  STALE_REASONING_MAX_TOKENS,
+  TEMPERATURE,
+} from "@/lib/model";
 import { buildStalePrompt, buildSystemPrompt, isSupportedVersion, ASK_VERSION_MESSAGE } from "@/lib/prompt";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 
@@ -20,9 +28,13 @@ function jsonError(status: number, error: string, headers?: HeadersInit): Respon
   return Response.json({ error }, { status, headers });
 }
 
-function model() {
+function model(opts: { reasoningMaxTokens?: number } = {}) {
   const openrouter = createOpenRouter({ apiKey: env.openrouter.apiKey() });
-  return openrouter.chat(MODEL_ID, openRouterRouting());
+  // Stale mode is pure recall: with unlimited reasoning, GLM spent the whole output budget
+  // thinking about whether to write outdated code and returned no text (finishReason "length").
+  // The pinned provider does not allow disabling reasoning, so cap it instead.
+  const extra = opts.reasoningMaxTokens ? { reasoning: { max_tokens: opts.reasoningMaxTokens } } : {};
+  return openrouter.chat(MODEL_ID, { ...openRouterRouting(), ...extra });
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -46,7 +58,7 @@ async function streamCompass(messages: UIMessage[], version: string): Promise<Re
   try {
     const [tools, outline] = await Promise.all([mcp.tools(), fetchInitialContext()]);
     const result = streamText({
-      model: model(),
+      model: model({ reasoningMaxTokens: REASONING_MAX_TOKENS }),
       system: buildSystemPrompt({ version, outline, knowledgeBaseId: env.sanity.knowledgeBases() || undefined }),
       messages: await convertToModelMessages(messages),
       tools,
@@ -68,7 +80,7 @@ async function streamCompass(messages: UIMessage[], version: string): Promise<Re
 
 async function streamStale(messages: UIMessage[]): Promise<Response> {
   const result = streamText({
-    model: model(),
+    model: model({ reasoningMaxTokens: STALE_REASONING_MAX_TOKENS }),
     system: buildStalePrompt(),
     messages: await convertToModelMessages(messages),
     temperature: TEMPERATURE,

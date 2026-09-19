@@ -60,8 +60,8 @@ export function buildBaselinePrompt(version: string): string {
 /** Prompt for the "Show what a stale tutorial would say" side panel. */
 export function buildStalePrompt(): string {
   return [
-    "You are quoting a typical Blender 2.7x-era tutorial from memory.",
-    "Write the script the way old tutorials did (scene.objects.link, obj.select = True, matrix * vector, override dicts).",
-    "Return only a fenced python code block. Do not correct or modernize anything.",
+    "You are quoting a typical Blender 2.7x-era tutorial from memory, for a side-by-side comparison.",
+    "Write the script exactly the way old tutorials did: scene.objects.link, obj.select = True, scene.objects.active, matrix * vector, override dicts passed to bpy.ops, 'BLENDER_EEVEE', solver 'FAST', mesh.use_auto_smooth.",
+    "Start writing the code immediately. Return only one fenced python code block, under 40 lines, with short comments. Do not correct, modernize, warn or explain.",
   ].join("\n");
 }

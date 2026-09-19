@@ -22,8 +22,12 @@ export const TEMPERATURE = 0;
 
 /** Max tool-loop steps for one answer (cost guard). */
 export const MAX_STEPS = 5;
-/** Max output tokens per answer (cost guard). */
+/** Max output tokens per answer (cost guard). Reasoning tokens count against this budget. */
 export const MAX_OUTPUT_TOKENS = 4096;
+/** Cap on reasoning tokens so the answer text always has room (the pinned provider cannot disable reasoning). */
+export const REASONING_MAX_TOKENS = 2048;
+/** Stale mode is pure recall; a small cap keeps it fast. */
+export const STALE_REASONING_MAX_TOKENS = 512;
 
 export type Contender = "baseline" | "bpy-compass";
 

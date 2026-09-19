@@ -24,6 +24,7 @@ import {
   MODEL_ID,
   openRouterRouting,
   PROVIDER,
+  REASONING_MAX_TOKENS,
   TEMPERATURE,
   type Contender,
 } from "../lib/model";
@@ -52,7 +53,10 @@ function parseArgs(argv: string[]) {
 /* ---------- LLM ---------- */
 
 function model() {
-  return createOpenRouter({ apiKey: env.openrouter.apiKey() }).chat(MODEL_ID, openRouterRouting());
+  return createOpenRouter({ apiKey: env.openrouter.apiKey() }).chat(MODEL_ID, {
+    ...openRouterRouting(),
+    reasoning: { max_tokens: REASONING_MAX_TOKENS },
+  });
 }
 
 async function askBaseline(tc: TestCaseDoc): Promise<string> {

@@ -6,22 +6,43 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "seed": "tsx scripts/seed-api-changes.ts",
+    "eval": "tsx scripts/eval.ts",
+    "schema:deploy": "sanity schema deploy",
+    "studio:dev": "sanity dev"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "^2.0.54",
+    "@ai-sdk/react": "^4.0.110",
+    "@openrouter/ai-sdk-provider": "^3.1.0",
+    "@sanity/client": "^8.6.2",
+    "@sanity/code-input": "^7.3.8",
+    "@sanity/vision": "^6.15.0",
+    "ai": "^7.0.107",
     "next": "16.3.5",
+    "next-sanity": "^13.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sanity": "^6.15.0",
+    "styled-components": "^6.5.3",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=22"
+  }
 }

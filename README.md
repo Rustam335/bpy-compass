@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# bpy-compass
 
-## Getting Started
+Version-aware answers for Blender Python (`bpy`) scripting, grounded in a
+[Sanity Context](https://www.sanity.io/docs/context) Knowledge Base built from official release
+notes. Entry for the **DEV Sanity Challenge, Path One: Ship an Agent That Queries Real Content**.
 
-First, run the development server:
+A plain LLM answers from a memory that blends every Blender version together. bpy-compass answers
+from a Knowledge Base whose conflicts a human has already resolved, cites each entry it read, and
+warns when a popular pattern was removed, since which version, and what replaced it.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+> **Sanity project ID:** _TODO_ · **Public dataset:** `production` · **Live app:** _TODO_
+
+## How it works
+
+```
+Browser ── Next.js (App Router, Vercel)
+              │  /api/chat  (server-only)
+              ├── Vercel AI SDK ── OpenRouter ── pinned model + provider (lib/model.ts)
+              └── MCP client ──► Sanity Context MCP (mode: knowledge_base)
+                                     └── Knowledge Base "bpy-compass"
+                                           ├── dataset source : *[_type=="apiChange"]
+                                           ├── website source : official release notes / API docs
+                                           └── file source    : deliberately stale tutorials
+
+Local only:
+scripts/eval.ts ─► agent + baseline ─► blender -b --python ─► evalRun documents in Sanity
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Every answer has three blocks: **ANSWER** (script valid for the requested version),
+**WATCH OUT** (deprecated patterns with version and replacement, each cited) and **SOURCES**
+(Knowledge Base entry paths that were read).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Getting started
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+yarn install --ignore-engines      # Node 22.16 locally; one transitive dep asks for >=22.20
+cp .env.example .env.local         # fill in Sanity + OpenRouter values
+yarn dev                           # http://localhost:3000, Studio at /studio
+```
 
-## Learn More
+| Script | What it does |
+|---|---|
+| `yarn dev` / `yarn build` | Next.js app |
+| `yarn typecheck` | `tsc --noEmit` |
+| `yarn schema:deploy` | Deploy Sanity schema |
+| `yarn seed` | Seed `blenderVersion` + `apiChange` from `sanity/seed/*.json` |
+| `yarn eval [--dry-run] [--only N]` | Run baseline vs bpy-compass in headless Blender, write `evalRun` docs |
 
-To learn more about Next.js, take a look at the following resources:
+The eval harness needs local Blender builds (`BLENDER_BIN_45`, `BLENDER_BIN_50`). Blender does not
+run on Vercel; the site only displays stored results on `/eval`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Repository layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/          page.tsx (chat + version picker) · eval/ · about/ · studio/ · api/chat/route.ts
+lib/          model.ts · prompt.ts · context-mcp.ts · sanity.ts · rate-limit.ts · env.ts
+sanity/       schemaTypes/ (apiChange, blenderVersion, testCase, evalRun) · seed/
+scripts/      eval.ts · seed-api-changes.ts
+kb-sources/   stale/ tutorials uploaded as KB file sources + ATTRIBUTION.md
+```
 
-## Deploy on Vercel
+## Eval results
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+_Filled from real runs before publishing. See `/eval`._
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT

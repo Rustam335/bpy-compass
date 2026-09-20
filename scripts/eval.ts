@@ -121,9 +121,10 @@ function blenderFor(targetVersion: string): { bin: string; build: string } {
   if (cached) return { bin, build: cached };
 
   const out = spawnSync(bin, ["--version"], { encoding: "utf8" });
-  const firstLine = out.stdout?.split("\n")[0]?.trim() ?? "";
+  // Some builds print allocator notices first, so take the first line that names the build.
+  const firstLine = (out.stdout ?? "").split("\n").map((l) => l.trim()).find((l) => l.startsWith("Blender ")) ?? "";
   const runtime = /^Blender (\d+\.\d+)/.exec(firstLine)?.[1];
-  if (!runtime) throw new Error(`${name}=${bin} did not report a Blender version (got: "${firstLine || out.error?.message || ""}").`);
+  if (!runtime) throw new Error(`${name}=${bin} did not report a Blender version (got: "${out.stdout?.trim() || out.error?.message || ""}").`);
   if (runtime !== targetVersion) {
     throw new Error(`${name} is Blender ${runtime}, but test cases targeting ${targetVersion} need a ${targetVersion} build.`);
   }

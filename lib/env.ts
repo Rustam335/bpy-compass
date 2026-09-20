@@ -23,7 +23,13 @@ export const env = {
     apiKey: () => required("OPENROUTER_API_KEY"),
   },
   blender: {
-    bin45: () => process.env.BLENDER_BIN_45 ?? "",
-    bin50: () => process.env.BLENDER_BIN_50 ?? "",
+    /**
+     * Exact Blender build per supported target version, e.g. "4.2" -> BLENDER_BIN_42.
+     * scripts/eval.ts refuses to run a test case in any other build (see #1).
+     */
+    binFor: (targetVersion: string) => {
+      const name = `BLENDER_BIN_${targetVersion.replace(".", "")}`;
+      return { name, path: process.env[name] ?? "" };
+    },
   },
 };

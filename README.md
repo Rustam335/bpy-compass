@@ -66,8 +66,10 @@ yarn dev                           # http://localhost:3000, Studio at /studio
 | `yarn seed` | Seed `blenderVersion`, `apiChange` and `testCase` from `sanity/seed/*.json` |
 | `yarn eval [--dry-run] [--only N]` | Run baseline vs bpy-compass in headless Blender, write `evalRun` docs |
 
-The eval harness needs local Blender builds (`BLENDER_BIN_45`, `BLENDER_BIN_50`; portable zips
-from download.blender.org work). Blender does not run on Vercel; the site only displays stored
+The eval harness needs one local Blender build per target version used by the test cases
+(`BLENDER_BIN_36`, `BLENDER_BIN_42`, `BLENDER_BIN_45`, `BLENDER_BIN_50`; portable zips from
+download.blender.org work). Each build is checked with `blender --version` before the run, so a
+test case targeting 4.2 can only execute in Blender 4.2. Blender does not run on Vercel; the site only displays stored
 results on `/eval`.
 
 ### Eval rules (so the numbers mean something)

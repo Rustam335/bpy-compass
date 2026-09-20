@@ -106,16 +106,30 @@ export function extractScript(answer: string): string {
 
 /* ---------- Blender ---------- */
 
-function blenderBinFor(version: string): string {
-  const major = version.split(".")[0];
-  const bin = major === "5" ? env.blender.bin50() : env.blender.bin45();
-  if (!bin) throw new Error(`No Blender binary configured for ${version} (BLENDER_BIN_45 / BLENDER_BIN_50).`);
-  return bin;
-}
+/** Verified `major.minor` -> build string, so each binary is probed once per run. */
+const verifiedBuilds = new Map<string, string>();
 
-function blenderBuild(bin: string): string {
+/**
+ * Resolve the exact Blender build for a target version and verify it before use, so an
+ * `evalRun` for target X.Y can only ever come from a Blender X.Y runtime (issue #1).
+ */
+function blenderFor(targetVersion: string): { bin: string; build: string } {
+  const { name, path: bin } = env.blender.binFor(targetVersion);
+  if (!bin) throw new Error(`No Blender binary configured for target ${targetVersion}: set ${name} in .env.local.`);
+
+  const cached = verifiedBuilds.get(targetVersion);
+  if (cached) return { bin, build: cached };
+
   const out = spawnSync(bin, ["--version"], { encoding: "utf8" });
-  return out.stdout?.split("\n")[0]?.trim() || "unknown";
+  const firstLine = out.stdout?.split("\n")[0]?.trim() ?? "";
+  const runtime = /^Blender (\d+\.\d+)/.exec(firstLine)?.[1];
+  if (!runtime) throw new Error(`${name}=${bin} did not report a Blender version (got: "${firstLine || out.error?.message || ""}").`);
+  if (runtime !== targetVersion) {
+    throw new Error(`${name} is Blender ${runtime}, but test cases targeting ${targetVersion} need a ${targetVersion} build.`);
+  }
+
+  verifiedBuilds.set(targetVersion, firstLine);
+  return { bin, build: firstLine };
 }
 
 async function runInBlender(bin: string, script: string, assertScript?: string) {
@@ -141,9 +155,9 @@ async function evaluate(tc: TestCaseDoc, contender: Contender, outline: string):
   if (!script) {
     return { script, rawAnswer, passed: false, stderr: "No python script found in answer.", blenderBuild: "n/a" };
   }
-  const bin = blenderBinFor(tc.targetVersion);
+  const { bin, build } = blenderFor(tc.targetVersion);
   const { passed, stderr } = await runInBlender(bin, script, tc.assertScript);
-  return { script, rawAnswer, passed, stderr, blenderBuild: blenderBuild(bin) };
+  return { script, rawAnswer, passed, stderr, blenderBuild: build };
 }
 
 function evalRunDoc(tc: TestCaseDoc, contender: Contender, r: RunResult, runId: string) {
@@ -170,6 +184,11 @@ async function main() {
   const all = await fetchTestCases({ fresh: true });
   const cases = only ? all.filter((_, i) => i + 1 === only) : all;
   if (cases.length === 0) throw new Error("No test cases found in Sanity.");
+
+  // Fail before any LLM call if a required Blender build is missing or the wrong version.
+  for (const targetVersion of new Set(cases.map((tc) => tc.targetVersion))) {
+    console.log(`blender ${targetVersion} -> ${blenderFor(targetVersion).build}`);
+  }
 
   const outline = await fetchInitialContext();
   const runId = new Date().toISOString().replace(/[:.]/g, "-");

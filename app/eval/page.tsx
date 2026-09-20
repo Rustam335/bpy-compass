@@ -53,13 +53,18 @@ export default async function EvalPage() {
   }
 
   const passCount = (key: "baseline" | "compass") => rows.filter((r) => r[key]?.passed).length;
+  // One exact build per target version; listed from the runs shown so this never goes stale.
+  const builds = [...new Set(rows.flatMap((r) => [r.baseline?.blenderBuild, r.compass?.blenderBuild]))]
+    .filter((b): b is string => Boolean(b) && b !== "n/a")
+    .sort();
 
   return (
     <article className="space-y-6">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Eval: plain LLM vs bpy-compass</h1>
         <p className="mt-3 max-w-3xl text-ink-dim">
-          Each generated script was executed in headless Blender (4.5.14 LTS and 5.0.1) with a
+          Each generated script was executed in headless Blender, in the exact build matching the
+          test case&apos;s target version ({builds.length ? builds.join(", ") : "one build per version"}), with a
           factory startup file, followed by the test case&apos;s assert script. Results are stored
           in Sanity and shown here unedited, including failures. The only difference between the two
           contenders is that the baseline has no Knowledge Base tools and no outline. Failed rows

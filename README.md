@@ -80,6 +80,9 @@ results on `/eval`.
   the baseline has no MCP tools and no Knowledge Base outline.
 - Every generated script is executed in headless Blender with `--factory-startup`, followed by
   the test case's assert script. Failures are stored and shown unedited.
+- One exact Blender build per target version (4.2.23 LTS, 4.5.14 LTS, 5.0.1). The harness runs
+  `blender --version` for every target before the first LLM call and aborts on a mismatch, and
+  each `evalRun` records the build that executed it (issue #1).
 
 ## Repository layout
 
@@ -95,7 +98,8 @@ public/       screenshots used on the About page
 ## Eval results
 
 See `/eval` on the live app. The table is filled from real headless-Blender runs, including
-failures, and is copied into the DEV post at publish time.
+failures, and is copied into the DEV post at publish time. Current run: baseline 11/12,
+bpy-compass 12/12, with the 4.2 case executed in Blender 4.2.23 LTS.
 
 ## License
 

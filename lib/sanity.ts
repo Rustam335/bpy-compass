@@ -47,7 +47,7 @@ export interface TestCaseDoc {
   question: string;
   targetVersion: string;
   assertScript?: string;
-  expectApiChanges?: { symbol: string; replacement?: string }[];
+  expectApiChanges?: { symbol: string; replacement?: string; kind?: ApiChangeKind }[];
 }
 
 export interface EvalRunDoc {
@@ -81,7 +81,7 @@ export const TEST_CASES_QUERY = /* groq */ `
 *[_type == "testCase"] | order(order asc, _createdAt asc) {
   _id, order, question, "assertScript": assertScript.code,
   "targetVersion": targetVersion->version,
-  "expectApiChanges": expectApiChanges[]->{ symbol, replacement }
+  "expectApiChanges": expectApiChanges[]->{ symbol, replacement, kind }
 }`;
 
 export const LATEST_EVAL_RUNS_QUERY = /* groq */ `

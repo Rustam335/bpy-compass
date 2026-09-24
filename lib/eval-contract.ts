@@ -3,7 +3,8 @@
  *
  * Running the script in Blender proves the ANSWER block works; it says nothing about the
  * WATCH OUT and SOURCES blocks. These pure functions check the rest of the contract:
- *  - WATCH OUT names every expected API change (the old symbol and its replacement);
+ *  - WATCH OUT names every expected API change that is a trap (removed, renamed or changed
+ *    behavior; an "added" API is context the output contract does not ask for);
  *  - SOURCES lists at least one Knowledge Base entry, and only entries that were actually
  *    read through knowledge_base_read during the answer.
  *
@@ -17,6 +18,8 @@
 export interface ExpectedApiChange {
   symbol: string;
   replacement?: string;
+  /** "added" entries are context, not traps: WATCH OUT is defined as deprecated/removed patterns. */
+  kind?: "removed" | "renamed" | "behavior" | "added";
 }
 
 export interface AnswerBlocks {
@@ -78,10 +81,11 @@ export function mentions(text: string, symbolOrReplacement: string): boolean {
 }
 
 export function checkWatchOut(watchOut: string | null, expected: ExpectedApiChange[]): string[] {
-  if (expected.length === 0) return [];
+  const traps = expected.filter((c) => c.kind !== "added");
+  if (traps.length === 0) return [];
   if (watchOut === null) return ["No WATCH OUT block in the answer."];
   const failures: string[] = [];
-  for (const change of expected) {
+  for (const change of traps) {
     if (!mentions(watchOut, change.symbol)) failures.push(`WATCH OUT does not mention ${change.symbol}.`);
     const replacement = change.replacement?.trim();
     if (replacement && !NO_REPLACEMENT.test(replacement) && !mentions(watchOut, replacement)) {

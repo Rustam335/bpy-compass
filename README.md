@@ -86,8 +86,9 @@ results on `/eval`.
 - Every generated script is executed in headless Blender with `--factory-startup`, followed by
   the test case's assert script. Failures are stored and shown unedited.
 - A result passes only if the script ran **and** the answer kept its contract (issue #2):
-  WATCH OUT must name every `apiChange` the test case expects (old symbol and replacement,
-  keyword match, see `lib/eval-contract.ts`), and SOURCES must list at least one Knowledge Base
+  WATCH OUT must name every `apiChange` the test case expects that is a trap, i.e. kind
+  removed/renamed/behavior (old symbol and replacement, keyword match, see
+  `lib/eval-contract.ts`; an `added` API is not a trap), and SOURCES must list at least one Knowledge Base
   entry and only entries that were actually passed to `knowledge_base_read` in that answer. The
   three verdicts (`blenderPassed`, `watchOutPassed`, `sourcesPassed`) and the failure reasons are
   stored on each `evalRun`; the SOURCES check does not apply to the baseline.

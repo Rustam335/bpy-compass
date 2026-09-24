@@ -48,6 +48,8 @@ test("checkWatchOut reports the missing symbol and the missing replacement separ
   ]);
   assert.deepEqual(checkWatchOut(null, [{ symbol: "x.y" }]), ["No WATCH OUT block in the answer."]);
   assert.deepEqual(checkWatchOut(null, []), []);
+  // An added API (e.g. the MANIFOLD solver in 4.5) is not a trap, so WATCH OUT need not mention it.
+  assert.deepEqual(checkWatchOut(watchOut, [{ symbol: 'bpy.types.BooleanModifier.solver == "MANIFOLD"', kind: "added" }]), []);
 });
 
 test("parseSources reads bullet paths and treats none as empty", () => {

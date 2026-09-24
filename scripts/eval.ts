@@ -27,7 +27,7 @@ import {
   TEMPERATURE,
   type Contender,
 } from "../lib/model";
-import { buildBaselinePrompt, buildSystemPrompt } from "../lib/prompt";
+import { buildBaselinePrompt, buildSystemPrompt, buildUserPrompt } from "../lib/prompt";
 import { fetchTestCases, writeClient, type TestCaseDoc } from "../lib/sanity";
 
 const BLENDER_TIMEOUT_MS = 120_000;
@@ -60,11 +60,12 @@ function model() {
   return createChatModel({ reasoningMaxTokens: REASONING_MAX_TOKENS });
 }
 
+/** Same prompt, contract and settings as the compass; the only thing missing is the Knowledge Base (issue #3). */
 async function askBaseline(tc: TestCaseDoc): Promise<string> {
   const { text } = await generateText({
     model: model(),
     system: buildBaselinePrompt(tc.targetVersion),
-    prompt: tc.question,
+    prompt: buildUserPrompt(tc.targetVersion, tc.question),
     temperature: TEMPERATURE,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
   });
@@ -77,7 +78,7 @@ async function askCompass(tc: TestCaseDoc, outline: string): Promise<string> {
     const { text } = await generateText({
       model: model(),
       system: buildSystemPrompt({ version: tc.targetVersion, outline }),
-      prompt: `Blender ${tc.targetVersion} — ${tc.question}`,
+      prompt: buildUserPrompt(tc.targetVersion, tc.question),
       tools: await mcp.tools(),
       stopWhen: stepCountIs(MAX_STEPS),
       temperature: TEMPERATURE,

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { NOT_IN_KB_MARKER } from "@/lib/prompt";
 
 const SANITY_PROJECT_ID = "uuc8lnyk";
 const DATASET = "production";
@@ -120,13 +121,18 @@ scripts/eval.ts ─► agent + baseline ─► blender -b --python ─► evalRu
       <H2>Honesty rules</H2>
       <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed">
         <li>Every answer lists the Knowledge Base entries it read.</li>
-        <li>If the Knowledge Base does not cover a question, the agent says so instead of guessing.</li>
+        <li>
+          If the Knowledge Base does not cover a question, the agent says so. When it covers only part
+          of it, the rest may come from the model&apos;s own knowledge, but every such code section is
+          marked <code>{NOT_IN_KB_MARKER}</code> inside the script and is never cited as a source.
+        </li>
         <li>
           <Link href="/eval" className="underline hover:text-accent">
             Eval results
           </Link>{" "}
           come from real headless-Blender runs and are shown as they ran, including failures. Baseline
-          and bpy-compass share the same model, provider and temperature.
+          and bpy-compass share the same model, provider, temperature, system prompt and user prompt;
+          the only difference is that the baseline has no Knowledge Base.
         </li>
       </ul>
     </article>

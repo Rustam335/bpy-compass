@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { NOT_IN_KB_MARKER } from "@/lib/prompt";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -55,7 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-10">{children}</main>
         <footer className="border-t border-line px-4 py-4 text-xs text-ink-faint">
           <div className="mx-auto flex max-w-5xl flex-wrap justify-between gap-2">
-            <span>Answers are read from a Sanity Context Knowledge Base, not from memory.</span>
+            <span>Answers are grounded in a Sanity Context Knowledge Base; code it does not back is marked <code>{NOT_IN_KB_MARKER}</code>.</span>
             <span>
               DEV Sanity Challenge, Path One.{" "}
               <a href="https://github.com/Rustam335/bpy-compass" className="underline hover:text-ink">

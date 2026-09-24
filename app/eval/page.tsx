@@ -66,9 +66,9 @@ export default async function EvalPage() {
           Each generated script was executed in headless Blender, in the exact build matching the
           test case&apos;s target version ({builds.length ? builds.join(", ") : "one build per version"}), with a
           factory startup file, followed by the test case&apos;s assert script. Results are stored
-          in Sanity and shown here unedited, including failures. The only difference between the two
-          contenders is that the baseline has no Knowledge Base tools and no outline. Failed rows
-          show the first error line from Blender.
+          in Sanity and shown here unedited, including failures. Both contenders get the same model,
+          settings, output contract and user prompt; the only difference is that the baseline has no
+          Knowledge Base (no tools, no outline, no KB rules). Failed rows show the first error line.
         </p>
       </header>
 

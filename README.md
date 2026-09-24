@@ -76,8 +76,12 @@ results on `/eval`.
 
 - Exact model ID, one pinned provider (`allow_fallbacks: false`), temperature 0. All three are
   constants in `lib/model.ts` and printed on `/eval`.
-- Baseline and bpy-compass share model, provider and temperature. The only difference is that
-  the baseline has no MCP tools and no Knowledge Base outline.
+- Baseline and bpy-compass share model, provider, temperature, output contract and user prompt.
+  The system prompt differs only in the Knowledge Base: the compass gets the KB tools, the KB
+  outline and the rules for using them; the baseline is told it has no Knowledge Base
+  (`buildBaselinePrompt` in `lib/prompt.ts` is `buildSystemPrompt` with `knowledgeBase: false`).
+- Grounding policy: answers are grounded in the Knowledge Base first. Code the KB does not back is
+  allowed, but must start with a `# NOT in Knowledge Base:` comment and is never cited as a source.
 - Every generated script is executed in headless Blender with `--factory-startup`, followed by
   the test case's assert script. Failures are stored and shown unedited.
 - One exact Blender build per target version (4.2.23 LTS, 4.5.14 LTS, 5.0.1). The harness runs

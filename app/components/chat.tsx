@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useState, type FormEvent } from "react";
-import { SUPPORTED_VERSIONS, type BlenderVersion } from "@/lib/prompt";
+import { buildUserPrompt, SUPPORTED_VERSIONS, type BlenderVersion } from "@/lib/prompt";
 import { AnswerPanels } from "./answer";
 
 const EXAMPLES = [
@@ -123,7 +123,7 @@ export function Chat() {
     setShowStale(false);
     stale.setMessages([]);
     compass.setMessages([]);
-    compass.sendMessage({ text: `Blender ${version} — ${q}` }, { body: { version, mode: "compass" } });
+    compass.sendMessage({ text: buildUserPrompt(version, q) }, { body: { version, mode: "compass" } });
     setInput("");
   }
 

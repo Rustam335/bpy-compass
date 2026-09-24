@@ -52,16 +52,26 @@ export interface TestCaseDoc {
 
 export interface EvalRunDoc {
   _id: string;
+  /** Set since issue #4; older documents carry it inside `_id` (see lib/eval-runs.ts). */
+  runId?: string;
   testCaseId: string;
   testCaseOrder: number | null;
   question: string;
   targetVersion: string;
   contender: "baseline" | "bpy-compass";
+  /** Script ran in Blender AND the WATCH OUT / SOURCES contract held (issue #2). */
   passed: boolean;
+  blenderPassed?: boolean;
+  watchOutPassed?: boolean;
+  /** Undefined for the baseline: no Knowledge Base, nothing to cross-check. */
+  sourcesPassed?: boolean;
+  /** Human-readable reasons, contract failures first. */
+  failures?: string[];
   stderr?: string;
   blenderBuild?: string;
   modelId: string;
   provider: string;
+  temperature?: number;
   ranAt: string;
 }
 
@@ -76,7 +86,8 @@ export const TEST_CASES_QUERY = /* groq */ `
 
 export const LATEST_EVAL_RUNS_QUERY = /* groq */ `
 *[_type == "evalRun"] | order(ranAt desc) {
-  _id, contender, passed, stderr, blenderBuild, modelId, provider, ranAt,
+  _id, runId, contender, passed, blenderPassed, watchOutPassed, sourcesPassed, failures,
+  stderr, blenderBuild, modelId, provider, temperature, ranAt,
   "testCaseId": testCase._ref,
   "testCaseOrder": testCase->order,
   "question": testCase->question,

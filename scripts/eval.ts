@@ -16,6 +16,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { connectContextMcp, fetchInitialContext } from "../lib/context-mcp";
 import { env } from "../lib/env";
+import { checkContract } from "../lib/eval-contract";
 import {
   assertValidModelConfig,
   createChatModel,
@@ -35,10 +36,19 @@ const BLENDER_TIMEOUT_MS = 120_000;
 type RunResult = {
   script: string;
   rawAnswer: string;
+  /** blenderPassed && watchOutPassed && sourcesPassed !== false */
   passed: boolean;
+  blenderPassed: boolean;
+  watchOutPassed: boolean;
+  /** null for the baseline (no Knowledge Base to cross-check). */
+  sourcesPassed: boolean | null;
+  failures: string[];
   stderr: string;
   blenderBuild: string;
 };
+
+/** What one contender produced: the text plus the KB entry paths it actually read (null = no KB). */
+type Answer = { text: string; readPaths: string[] | null };
 
 /* ---------- CLI ---------- */
 
@@ -61,7 +71,7 @@ function model() {
 }
 
 /** Same prompt, contract and settings as the compass; the only thing missing is the Knowledge Base (issue #3). */
-async function askBaseline(tc: TestCaseDoc): Promise<string> {
+async function askBaseline(tc: TestCaseDoc): Promise<Answer> {
   const { text } = await generateText({
     model: model(),
     system: buildBaselinePrompt(tc.targetVersion),
@@ -69,13 +79,25 @@ async function askBaseline(tc: TestCaseDoc): Promise<string> {
     temperature: TEMPERATURE,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
   });
-  return text;
+  return { text, readPaths: null };
 }
 
-async function askCompass(tc: TestCaseDoc, outline: string): Promise<string> {
+/** Entry paths passed to knowledge_base_read across all steps, so SOURCES can be cross-checked (issue #2). */
+export function readPathsOf(steps: { toolCalls: { toolName: string; input: unknown }[] }[]): string[] {
+  return steps.flatMap((step) =>
+    step.toolCalls
+      .filter((call) => call.toolName === "knowledge_base_read")
+      .flatMap((call) => {
+        const paths = (call.input as { paths?: unknown } | null)?.paths;
+        return Array.isArray(paths) ? paths.filter((p): p is string => typeof p === "string") : [];
+      }),
+  );
+}
+
+async function askCompass(tc: TestCaseDoc, outline: string): Promise<Answer> {
   const mcp = await connectContextMcp();
   try {
-    const { text } = await generateText({
+    const { text, steps } = await generateText({
       model: model(),
       system: buildSystemPrompt({ version: tc.targetVersion, outline }),
       prompt: buildUserPrompt(tc.targetVersion, tc.question),
@@ -84,7 +106,7 @@ async function askCompass(tc: TestCaseDoc, outline: string): Promise<string> {
       temperature: TEMPERATURE,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
     });
-    return text;
+    return { text, readPaths: readPathsOf(steps) };
   } finally {
     await mcp.close();
   }
@@ -157,30 +179,60 @@ async function runInBlender(bin: string, script: string, assertScript?: string) 
 
 /* ---------- Orchestration ---------- */
 
+/**
+ * One contender on one test case: the script must run in the exact Blender build AND the
+ * WATCH OUT / SOURCES blocks must hold up (issue #2). Both verdicts are stored separately.
+ */
 async function evaluate(tc: TestCaseDoc, contender: Contender, outline: string): Promise<RunResult> {
-  const rawAnswer = contender === "baseline" ? await askBaseline(tc) : await askCompass(tc, outline);
+  const { text: rawAnswer, readPaths } = contender === "baseline" ? await askBaseline(tc) : await askCompass(tc, outline);
+  const contract = checkContract({ answer: rawAnswer, expected: tc.expectApiChanges ?? [], readPaths });
   const script = extractScript(rawAnswer);
-  if (!script) {
-    return { script, rawAnswer, passed: false, stderr: "No python script found in answer.", blenderBuild: "n/a" };
-  }
+  const blender = script
+    ? await runScript(tc, script)
+    : { passed: false, stderr: "No python script found in answer.", build: "n/a" };
+
+  const failures = [...contract.failures, ...(blender.passed ? [] : [`Blender: ${firstLine(blender.stderr)}`])];
+  return {
+    script,
+    rawAnswer,
+    passed: blender.passed && contract.watchOutPassed && contract.sourcesPassed !== false,
+    blenderPassed: blender.passed,
+    watchOutPassed: contract.watchOutPassed,
+    sourcesPassed: contract.sourcesPassed,
+    failures,
+    stderr: blender.stderr,
+    blenderBuild: blender.build,
+  };
+}
+
+async function runScript(tc: TestCaseDoc, script: string) {
   const { bin, build } = blenderFor(tc.targetVersion);
-  const { passed, stderr } = await runInBlender(bin, script, tc.assertScript);
-  return { script, rawAnswer, passed, stderr, blenderBuild: build };
+  return { ...(await runInBlender(bin, script, tc.assertScript)), build };
+}
+
+function firstLine(text: string): string {
+  return text.split("\n").find((l) => l.trim())?.trim() ?? "";
 }
 
 function evalRunDoc(tc: TestCaseDoc, contender: Contender, r: RunResult, runId: string) {
   return {
     _id: `evalRun-${runId}-${tc._id}-${contender}`,
     _type: "evalRun",
+    runId,
     testCase: { _type: "reference", _ref: tc._id },
     contender,
     script: { _type: "code", language: "python", code: r.script },
     rawAnswer: r.rawAnswer,
     passed: r.passed,
+    blenderPassed: r.blenderPassed,
+    watchOutPassed: r.watchOutPassed,
+    ...(r.sourcesPassed === null ? {} : { sourcesPassed: r.sourcesPassed }),
+    failures: r.failures,
     stderr: r.stderr.slice(0, 4000),
     blenderBuild: r.blenderBuild,
     modelId: MODEL_ID,
     provider: PROVIDER,
+    temperature: TEMPERATURE,
     ranAt: new Date().toISOString(),
   };
 }
@@ -208,8 +260,8 @@ async function main() {
   for (const [i, tc] of cases.entries()) {
     for (const contender of ["baseline", "bpy-compass"] as const) {
       const r = await evaluate(tc, contender, outline);
-      console.log(`#${i + 1} [${tc.targetVersion}] ${contender.padEnd(11)} ${r.passed ? "PASS" : "FAIL"}  ${tc.question}`);
-      if (!r.passed) console.log(`   ${r.stderr.split("\n").find((l) => l.trim()) ?? ""}`);
+      console.log(`#${tc.order ?? i + 1} [${tc.targetVersion}] ${contender.padEnd(11)} ${r.passed ? "PASS" : "FAIL"}  ${tc.question}`);
+      for (const f of r.failures) console.log(`   ${f}`);
       if (client) await client.createOrReplace(evalRunDoc(tc, contender, r, runId));
     }
   }

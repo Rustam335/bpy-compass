@@ -117,8 +117,12 @@ public/       screenshots used on the About page
 ## Eval results
 
 See `/eval` on the live app. The table is filled from real headless-Blender runs, including
-failures, and is copied into the DEV post at publish time. Current run: baseline 11/12,
-bpy-compass 12/12, with the 4.2 case executed in Blender 4.2.23 LTS.
+failures, and is copied into the DEV post at publish time. Current run (25 Sep 2026, after the
+review in issues #2 to #13 made the harness stricter): **baseline 8/12, bpy-compass 11/12**.
+Under the old harness (script execution only, baseline with a different prompt) the same cases
+scored 11/12 vs 12/12; the stricter numbers are the ones that count. The one bpy-compass failure
+(case 12) is a scripting bug unrelated to versions: it knew `FAST` became `FLOAT` in 5.0, but
+created the cutter with `objects.new` without linking it and then called `select_set`.
 
 ## Contributors
 

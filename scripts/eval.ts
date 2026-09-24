@@ -42,11 +42,16 @@ type RunResult = {
 
 /* ---------- CLI ---------- */
 
-function parseArgs(argv: string[]) {
+export function parseArgs(argv: string[]): { dryRun: boolean; only?: number } {
   const dryRun = argv.includes("--dry-run");
   const onlyIdx = argv.indexOf("--only");
-  const only = onlyIdx >= 0 ? Number(argv[onlyIdx + 1]) : undefined;
-  return { dryRun, only };
+  if (onlyIdx < 0) return { dryRun };
+  // A typo here must not silently run the whole suite (issue #7).
+  const raw = argv[onlyIdx + 1];
+  if (!raw || !/^[1-9]\d*$/.test(raw)) {
+    throw new Error(`--only expects a positive integer test-case order, got "${raw ?? ""}".`);
+  }
+  return { dryRun, only: Number(raw) };
 }
 
 /* ---------- LLM ---------- */
@@ -184,8 +189,9 @@ async function main() {
   assertValidModelConfig();
 
   const all = await fetchTestCases({ fresh: true });
-  const cases = only ? all.filter((_, i) => i + 1 === only) : all;
-  if (cases.length === 0) throw new Error("No test cases found in Sanity.");
+  if (all.length === 0) throw new Error("No test cases found in Sanity.");
+  const cases = only === undefined ? all : all.filter((tc) => tc.order === only);
+  if (cases.length === 0) throw new Error(`No test case has order ${only}. Available: ${all.map((tc) => tc.order).join(", ")}.`);
 
   // Fail before any LLM call if a required Blender build is missing or the wrong version.
   for (const targetVersion of new Set(cases.map((tc) => tc.targetVersion))) {
@@ -208,7 +214,9 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (process.argv[1] && /eval\.ts$/.test(process.argv[1])) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

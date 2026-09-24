@@ -42,6 +42,8 @@ export type ApiArea = "python-api" | "modeling" | "shading" | "animation" | "ren
 
 export interface TestCaseDoc {
   _id: string;
+  /** Row number in the eval table; `yarn eval --only N` selects by this. */
+  order: number | null;
   question: string;
   targetVersion: string;
   assertScript?: string;
@@ -67,7 +69,7 @@ export interface EvalRunDoc {
 
 export const TEST_CASES_QUERY = /* groq */ `
 *[_type == "testCase"] | order(order asc, _createdAt asc) {
-  _id, question, "assertScript": assertScript.code,
+  _id, order, question, "assertScript": assertScript.code,
   "targetVersion": targetVersion->version,
   "expectApiChanges": expectApiChanges[]->{ symbol, replacement }
 }`;

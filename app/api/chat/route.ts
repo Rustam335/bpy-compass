@@ -1,4 +1,4 @@
-import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from "ai";
+import { convertToModelMessages, safeValidateUIMessages, stepCountIs, streamText, type ModelMessage, type UIMessage } from "ai";
 import { z } from "zod";
 import { connectContextMcp, fetchInitialContext } from "@/lib/context-mcp";
 import { env } from "@/lib/env";
@@ -17,7 +17,8 @@ import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 export const maxDuration = 60;
 
 const BodySchema = z.object({
-  messages: z.array(z.custom<UIMessage>()).min(1),
+  // Shape-checked below with the AI SDK validator; zod only guarantees a non-empty array (issue #8).
+  messages: z.array(z.unknown()).min(1),
   version: z.string().optional(),
   /** "compass" = KB-grounded answer (default); "stale" = what an old tutorial would say. */
   mode: z.enum(["compass", "stale"]).default("compass"),
@@ -44,7 +45,10 @@ export async function POST(req: Request): Promise<Response> {
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return jsonError(400, "Invalid request body.");
-  const { messages, version, mode } = parsed.data;
+  const { version, mode } = parsed.data;
+
+  const messages = await toModelMessages(parsed.data.messages);
+  if (!messages) return jsonError(400, "Malformed messages.");
 
   if (mode === "stale") return streamStale(messages);
 
@@ -52,14 +56,32 @@ export async function POST(req: Request): Promise<Response> {
   return streamCompass(messages, version);
 }
 
-async function streamCompass(messages: UIMessage[], version: string): Promise<Response> {
+/**
+ * Validate the UIMessage structure and convert it before any model call, so a malformed
+ * body is a 400 instead of a crash inside the stream. Returns null when either step fails.
+ */
+async function toModelMessages(raw: unknown[]): Promise<ModelMessage[] | null> {
+  const validated = await safeValidateUIMessages<UIMessage>({ messages: raw });
+  if (!validated.success) {
+    console.warn("[api/chat] rejected messages", validated.error.message);
+    return null;
+  }
+  try {
+    return await convertToModelMessages(validated.data);
+  } catch (err) {
+    console.warn("[api/chat] could not convert messages", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
+async function streamCompass(messages: ModelMessage[], version: string): Promise<Response> {
   const mcp = await connectContextMcp();
   try {
     const [tools, outline] = await Promise.all([mcp.tools(), fetchInitialContext()]);
     const result = streamText({
       model: createChatModel({ reasoningMaxTokens: REASONING_MAX_TOKENS }),
       system: buildSystemPrompt({ version, outline, knowledgeBaseId: env.sanity.knowledgeBases() || undefined }),
-      messages: await convertToModelMessages(messages),
+      messages,
       tools,
       stopWhen: stepCountIs(MAX_STEPS),
       temperature: TEMPERATURE,
@@ -77,11 +99,11 @@ async function streamCompass(messages: UIMessage[], version: string): Promise<Re
   }
 }
 
-async function streamStale(messages: UIMessage[]): Promise<Response> {
+async function streamStale(messages: ModelMessage[]): Promise<Response> {
   const result = streamText({
     model: createChatModel({ reasoningMaxTokens: STALE_REASONING_MAX_TOKENS }),
     system: buildStalePrompt(),
-    messages: await convertToModelMessages(messages),
+    messages,
     temperature: TEMPERATURE,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     onError: ({ error }) => console.error("[api/chat:stale] stream error", error),

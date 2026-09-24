@@ -1,13 +1,12 @@
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from "ai";
 import { z } from "zod";
 import { connectContextMcp, fetchInitialContext } from "@/lib/context-mcp";
 import { env } from "@/lib/env";
 import {
+  assertValidModelConfig,
+  createChatModel,
   MAX_OUTPUT_TOKENS,
   MAX_STEPS,
-  MODEL_ID,
-  openRouterRouting,
   REASONING_MAX_TOKENS,
   STALE_REASONING_MAX_TOKENS,
   TEMPERATURE,
@@ -28,19 +27,19 @@ function jsonError(status: number, error: string, headers?: HeadersInit): Respon
   return Response.json({ error }, { status, headers });
 }
 
-function model(opts: { reasoningMaxTokens?: number } = {}) {
-  const openrouter = createOpenRouter({ apiKey: env.openrouter.apiKey() });
-  // Stale mode is pure recall: with unlimited reasoning, GLM spent the whole output budget
-  // thinking about whether to write outdated code and returned no text (finishReason "length").
-  // The pinned provider does not allow disabling reasoning, so cap it instead.
-  const extra = opts.reasoningMaxTokens ? { reasoning: { max_tokens: opts.reasoningMaxTokens } } : {};
-  return openrouter.chat(MODEL_ID, { ...openRouterRouting(), ...extra });
-}
-
 export async function POST(req: Request): Promise<Response> {
   const limit = checkRateLimit(clientIp(req));
   if (!limit.ok) {
     return jsonError(429, "Too many requests, slow down.", { "Retry-After": String(limit.retryAfterSec) });
+  }
+
+  // Same guard as the eval harness: refuse to answer with an unpinned provider or a
+  // non-exact model ID instead of silently producing non-reproducible output (issue #9).
+  try {
+    assertValidModelConfig();
+  } catch (err) {
+    console.error("[api/chat] invalid model configuration", err);
+    return jsonError(503, "The model configuration on the server is invalid.");
   }
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => null));
@@ -58,7 +57,7 @@ async function streamCompass(messages: UIMessage[], version: string): Promise<Re
   try {
     const [tools, outline] = await Promise.all([mcp.tools(), fetchInitialContext()]);
     const result = streamText({
-      model: model({ reasoningMaxTokens: REASONING_MAX_TOKENS }),
+      model: createChatModel({ reasoningMaxTokens: REASONING_MAX_TOKENS }),
       system: buildSystemPrompt({ version, outline, knowledgeBaseId: env.sanity.knowledgeBases() || undefined }),
       messages: await convertToModelMessages(messages),
       tools,
@@ -80,7 +79,7 @@ async function streamCompass(messages: UIMessage[], version: string): Promise<Re
 
 async function streamStale(messages: UIMessage[]): Promise<Response> {
   const result = streamText({
-    model: model({ reasoningMaxTokens: STALE_REASONING_MAX_TOKENS }),
+    model: createChatModel({ reasoningMaxTokens: STALE_REASONING_MAX_TOKENS }),
     system: buildStalePrompt(),
     messages: await convertToModelMessages(messages),
     temperature: TEMPERATURE,

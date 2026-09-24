@@ -8,6 +8,9 @@
  *  - baseline and bpy-compass share model, provider and temperature
  */
 
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { env } from "./env";
+
 const FORBIDDEN_MODEL_PATTERNS = [
   /^openrouter\/auto$/,
   /^openrouter\/free$/,
@@ -52,4 +55,17 @@ export function openRouterRouting() {
       allow_fallbacks: false,
     },
   };
+}
+
+/**
+ * The one way to build the chat model, shared by /api/chat and scripts/eval.ts, so production
+ * and eval run under the same model-routing contract (issue #9). Throws on an invalid config.
+ */
+export function createChatModel(opts: { reasoningMaxTokens?: number } = {}) {
+  assertValidModelConfig();
+  const openrouter = createOpenRouter({ apiKey: env.openrouter.apiKey() });
+  // The pinned provider cannot disable reasoning, so callers cap it instead. Without a cap GLM
+  // once spent the whole output budget thinking and returned no text (finishReason "length").
+  const extra = opts.reasoningMaxTokens ? { reasoning: { max_tokens: opts.reasoningMaxTokens } } : {};
+  return openrouter.chat(MODEL_ID, { ...openRouterRouting(), ...extra });
 }

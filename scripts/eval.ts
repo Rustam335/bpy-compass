@@ -9,7 +9,6 @@
  * Runs locally only (Blender is not available on Vercel).
  */
 import "./load-env";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, stepCountIs } from "ai";
 import { spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -19,10 +18,10 @@ import { connectContextMcp, fetchInitialContext } from "../lib/context-mcp";
 import { env } from "../lib/env";
 import {
   assertValidModelConfig,
+  createChatModel,
   MAX_OUTPUT_TOKENS,
   MAX_STEPS,
   MODEL_ID,
-  openRouterRouting,
   PROVIDER,
   REASONING_MAX_TOKENS,
   TEMPERATURE,
@@ -53,10 +52,7 @@ function parseArgs(argv: string[]) {
 /* ---------- LLM ---------- */
 
 function model() {
-  return createOpenRouter({ apiKey: env.openrouter.apiKey() }).chat(MODEL_ID, {
-    ...openRouterRouting(),
-    reasoning: { max_tokens: REASONING_MAX_TOKENS },
-  });
+  return createChatModel({ reasoningMaxTokens: REASONING_MAX_TOKENS });
 }
 
 async function askBaseline(tc: TestCaseDoc): Promise<string> {

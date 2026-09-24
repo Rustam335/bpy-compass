@@ -12,7 +12,7 @@ import "./load-env";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, stepCountIs } from "ai";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { connectContextMcp, fetchInitialContext } from "../lib/context-mcp";
@@ -134,18 +134,23 @@ function blenderFor(targetVersion: string): { bin: string; build: string } {
 }
 
 async function runInBlender(bin: string, script: string, assertScript?: string) {
+  // One scratch directory per execution, removed after the result is collected (issue #13).
   const dir = await mkdtemp(path.join(tmpdir(), "bpy-compass-"));
-  const file = path.join(dir, "case.py");
-  const body = [script, "", "# ---- assertions ----", assertScript ?? ""].join("\n");
-  await writeFile(file, body, "utf8");
+  try {
+    const file = path.join(dir, "case.py");
+    const body = [script, "", "# ---- assertions ----", assertScript ?? ""].join("\n");
+    await writeFile(file, body, "utf8");
 
-  const out = spawnSync(bin, ["-b", "--factory-startup", "--python-exit-code", "1", "--python", file], {
-    encoding: "utf8",
-    timeout: BLENDER_TIMEOUT_MS,
-    // Test cases that write files read this path instead of inventing one.
-    env: { ...process.env, BPY_OUT_OBJ: path.join(dir, "out.obj") },
-  });
-  return { passed: out.status === 0, stderr: (out.stderr ?? "") + (out.error ? `\n${out.error.message}` : "") };
+    const out = spawnSync(bin, ["-b", "--factory-startup", "--python-exit-code", "1", "--python", file], {
+      encoding: "utf8",
+      timeout: BLENDER_TIMEOUT_MS,
+      // Test cases that write files read this path instead of inventing one.
+      env: { ...process.env, BPY_OUT_OBJ: path.join(dir, "out.obj") },
+    });
+    return { passed: out.status === 0, stderr: (out.stderr ?? "") + (out.error ? `\n${out.error.message}` : "") };
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 /* ---------- Orchestration ---------- */

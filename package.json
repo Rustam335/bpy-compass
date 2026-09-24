@@ -11,7 +11,8 @@
     "seed": "tsx scripts/seed-api-changes.ts",
     "eval": "tsx scripts/eval.ts",
     "schema:deploy": "sanity schema deploy",
-    "studio:dev": "sanity dev"
+    "studio:dev": "sanity dev",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@ai-sdk/mcp": "^2.0.54",

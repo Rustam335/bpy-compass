@@ -76,7 +76,8 @@ scripts/eval.ts ─► agent + baseline ─► blender -b --python ─► evalRu
         raised six critical conflicts. Four of them were facts that are true for different versions
         (the EEVEE identifier, the boolean solver names), so picking one side would have made the
         Knowledge Base wrong for the other version. They were resolved with version-scoped picks and
-        three standing Instructions.
+        four standing Instructions (two from the build, two from failures the eval and a manual test
+        surfaced later).
       </p>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <figure>

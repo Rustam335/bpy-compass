@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { passRate, provenance, runIdOf, selectRun, type TestCaseRef } from "../lib/eval-runs";
+import { blenderReason, failureReason, passRate, provenance, runIdOf, selectRun, type TestCaseRef } from "../lib/eval-runs";
 import type { EvalRunDoc } from "../lib/sanity";
 
 const CASES: TestCaseRef[] = [
@@ -70,4 +70,13 @@ test("provenance comes from the records and flags mixed configurations", () => {
   const mixed = selectRun([doc("r", "testCase-a", "baseline", true), doc("r", "testCase-a", "bpy-compass", true, { modelId: "other" })], CASES)!.rows;
   assert.equal(provenance(mixed).mixed, true);
   assert.deepEqual(provenance(mixed).models, ["m", "other"]);
+});
+
+test("blenderReason shows the Python exception line, not the traceback header", () => {
+  const stderr = "Traceback (most recent call last):\n  File \"case.py\", line 4, in <module>\n    scene.render.engine = 'X'\nTypeError: enum \"X\" not found\nError: script failed, file: 'case.py', exiting.\n";
+  assert.equal(blenderReason(stderr), 'TypeError: enum "X" not found');
+  assert.equal(blenderReason("No python script found in answer."), "No python script found in answer.");
+  assert.equal(blenderReason(""), "");
+  assert.equal(failureReason({ failures: ["Blender: Traceback (most recent call last):"], stderr }), 'Blender: TypeError: enum "X" not found');
+  assert.equal(failureReason({ failures: ["WATCH OUT does not mention x."], stderr }), "WATCH OUT does not mention x.");
 });

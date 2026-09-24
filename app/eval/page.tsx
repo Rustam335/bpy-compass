@@ -1,11 +1,11 @@
-import { passRate, provenance, selectRun, type EvalRow, type SelectedRun } from "@/lib/eval-runs";
+import { failureReason, passRate, provenance, selectRun, type EvalRow, type SelectedRun } from "@/lib/eval-runs";
 import { fetchEvalRuns, fetchTestCases, type EvalRunDoc } from "@/lib/sanity";
 
 export const revalidate = 300;
 
 function Cell({ run }: { run?: EvalRunDoc }) {
   if (!run) return <td className="px-3 py-2 text-ink-faint">not run</td>;
-  const reason = run.failures?.[0] ?? run.stderr?.split("\n").find((l) => l.trim());
+  const reason = failureReason(run);
   return (
     <td className="px-3 py-2 align-top">
       <span className={run.passed ? "text-green-600" : "text-red-600"}>

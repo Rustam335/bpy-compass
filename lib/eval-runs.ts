@@ -78,6 +78,24 @@ export function selectRun(runs: EvalRunDoc[], testCases: TestCaseRef[]): Selecte
   return candidates.find((c) => c.complete) ?? candidates[0] ?? null;
 }
 
+/**
+ * The one line of Blender stderr worth showing: the Python exception line when there is a
+ * traceback, else the first non-empty line. "Traceback (most recent call last):" says nothing.
+ */
+export function blenderReason(stderr: string | undefined): string {
+  const lines = (stderr ?? "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const exception = [...lines].reverse().find((l) => /^[A-Za-z_.]*(Error|Exception)\b/.test(l) && !l.startsWith("Error: script failed"));
+  return exception ?? lines[0] ?? "";
+}
+
+/** Reason to show in a failed cell: contract failures first, a real Blender error line otherwise. */
+export function failureReason(run: Pick<EvalRunDoc, "failures" | "stderr">): string {
+  const first = run.failures?.[0];
+  if (first && !first.startsWith("Blender: Traceback")) return first;
+  const blender = blenderReason(run.stderr);
+  return blender ? `Blender: ${blender}` : (first ?? "");
+}
+
 export interface PassRate {
   passed: number;
   /** Test cases that have a result for this contender. */

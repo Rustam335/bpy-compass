@@ -17,6 +17,7 @@ import path from "node:path";
 import { connectContextMcp, fetchInitialContext } from "../lib/context-mcp";
 import { env } from "../lib/env";
 import { checkContract } from "../lib/eval-contract";
+import { blenderReason } from "../lib/eval-runs";
 import {
   assertValidModelConfig,
   createChatModel,
@@ -191,7 +192,7 @@ async function evaluate(tc: TestCaseDoc, contender: Contender, outline: string):
     ? await runScript(tc, script)
     : { passed: false, stderr: "No python script found in answer.", build: "n/a" };
 
-  const failures = [...contract.failures, ...(blender.passed ? [] : [`Blender: ${firstLine(blender.stderr)}`])];
+  const failures = [...contract.failures, ...(blender.passed ? [] : [`Blender: ${blenderReason(blender.stderr)}`])];
   return {
     script,
     rawAnswer,
@@ -208,10 +209,6 @@ async function evaluate(tc: TestCaseDoc, contender: Contender, outline: string):
 async function runScript(tc: TestCaseDoc, script: string) {
   const { bin, build } = blenderFor(tc.targetVersion);
   return { ...(await runInBlender(bin, script, tc.assertScript)), build };
-}
-
-function firstLine(text: string): string {
-  return text.split("\n").find((l) => l.trim())?.trim() ?? "";
 }
 
 function evalRunDoc(tc: TestCaseDoc, contender: Contender, r: RunResult, runId: string) {
